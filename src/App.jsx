@@ -3,6 +3,7 @@ import Search from "./components/Search";
 import Spinner from "./components/Spinner";
 import MovieCard from "./components/MovieCard";
 import { useEffect, useState } from "react";
+import { useDebounce } from "use-debounce";
 
 //API CONFIGURATION
 const API_BASE_URL = "https://api.themoviedb.org/3";
@@ -20,16 +21,21 @@ const App = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [moviesList, setMoviesList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [debouncedSearchTerm] = useDebounce(searchTerm, 500);
 
-const fetchMovies = async (query = '') => {
-  setIsLoading(true);
-  setErrorMessage("");
-  try {
+ 
+  //Fetch movies from the API
+  const fetchMovies = async (query = '') => {
+    setIsLoading(true);
+    setErrorMessage("");
+    try {
+      //Construct the API endpoint
      const endpoint = query 
      ? `${API_BASE_URL}/search/movie?query=${encodeURIComponent(query)}&include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc` 
      : `${API_BASE_URL}/discover/movie?include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc`;
 
      console.log("Attempting to fetch from:", endpoint);
+     //Fetch the data from the API
      const response = await fetch(endpoint, API_OPTIONS);
      
      if (!response.ok) {
@@ -41,12 +47,15 @@ const fetchMovies = async (query = '') => {
      
      const data = await response.json();
      
+     //Check if the response is an error
      if(Date.response ==="false "){
       setErrorMessage( data.error || "No movies found");
+      //Clear the movies list if there is an error
       setMoviesList([]);
       return;
      }
      
+    //Update the movies list
      setMoviesList(data.results || []);
      console.log("Successfully fetched data:", data);
      
@@ -57,9 +66,11 @@ const fetchMovies = async (query = '') => {
     setIsLoading(false);
   }
 }
+
+  //Fetch movies when the debounced search term changes
   useEffect(() => {
-    fetchMovies(searchTerm);
-  }, [searchTerm]); 
+    fetchMovies(debouncedSearchTerm);
+  }, [debouncedSearchTerm]); 
 
   return (
     <main>
